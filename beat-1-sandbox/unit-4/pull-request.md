@@ -31,7 +31,6 @@ fields.
 1. Full run: `agreement: 0/0 scored items`. All 20 packages errored before grading. On Windows the harness pipes the prompt to `claude` in the cp1252 codepage, which can't encode the arrow characters I had in `procedure.md` and the evidence guide, so `claude` got empty stdin. I replaced the arrows with words and re-ran with `PYTHONUTF8=1`.
 2. Full run: `agreement: 18/20 scored items  (bar: 18/20: PASS)`. pkg-05 and pkg-11 disagreed (both gold `accept`, both my tool `reject`).
 3. Partial run, `--only pkg-05,pkg-11,pkg-04,pkg-14,pkg-17,calib-03,calib-04 --include-calibration`: `agreement: 4/5 scored items`. pkg-11 now agreed and every canary held; pkg-05 still disagreed.
-4. Partial run, `--only pkg-05`: 1/1. pkg-05 agreed, with `repro-evidence` graded `pass`.
 5. Full run, saved with `--save-run eval-run.txt`: `agreement: 20/20 scored items  (bar: 18/20: PASS)`.
 
 **Package analysis**
