@@ -453,23 +453,54 @@ and the suite's result line from layer 3, not just "tests pass".
 
 ## Implementation Notes
 
-[A running log, added to as you work. Date each entry. What you
-built, decisions you made when you made them, wrong turns included.]
+**2026-11-22: claim, fork, baseline**
 
-**[Date]**
+Posted my claim on #335 through Claude Code, so the voice guard checked it
+first. My older draft promised a PR "within about a week", which breaks my
+own no-time-estimates rule, so I cut that before posting. Forked to
+AnthomasGit/orm-lens and cloned it. Wrong turn: `gh repo fork --clone=true`
+failed; it takes a bare `--clone`. Made a `.venv`, ran
+`cd cli && pip install -e ".[dev]"`, and took a baseline before touching any
+code: `python -m pytest -q` gave 1310 passed, 6 skipped, and ruff and mypy
+were clean. I kept `CLAUDE.local.md` and `.venv/` out of git with
+`.git/info/exclude`.
 
-[Entry]
+**2026-11-22: reproduction and plan**
 
-**[Date]**
+Reproduced the bug on `main` at `ac40f8d` with the issue's own example
+(`found 1 apps / 1 models`, `Comment` missing), plus a wrapped-header case
+and a control run for each, so I know the call in the base list is the
+trigger. Read `_read_multiline_class()`, `_collect_defs()` and
+`_looks_like_model()` and decided to follow the maintainer's suggested fix
+rather than touch `CLASS_RE` itself, because the one-line path already falls
+back to `_read_multiline_class()`. Found a side effect the issue does not
+mention: the stripped call will drop out of `baseClasses` in the JSON output,
+so I will say so in the PR. Two more decisions:
+- The TypeScript parser waits for the maintainer's answer to my claim's
+  question.
+- I edited the claim to drop "I'll post the output here before I start on
+  the fix", since the course keeps the repro report off the issue and lets
+  the PR carry it. GitHub shows that comment as edited.
 
-[Entry]
+**Next: the build (not started)**
+
+No code changed yet; my clone is still on `main`. Next entry starts with
+the branch `fix/call-in-bases-335`, writing `cli/tests/test_call_in_bases.py`
+and watching it fail on unfixed code.
 
 **Toolkit**
 
-- Tool:
-- What it produced:
-- Difficulties:
-- What changed:
+- Tool: the voice guard, run as a hook on the claim post and on the edit;
+  and `CLAUDE.local.md`, my repo memory file, which held the test commands
+  and the parser map I worked from
+- What it produced: two guard passes in `guard-log.md`, and a baseline run
+  of the exact CI commands copied from that file
+- Difficulties: the guard only watches Bash, and both times the posting
+  session tried PowerShell first; a permission prompt stopped it, not the
+  guard. No code has been built yet, so this phase has not tested the tools
+  on real changes
+- What changed: I post only through Bash with `--body-file`; nothing in the
+  build tools yet
 
 ---
 
