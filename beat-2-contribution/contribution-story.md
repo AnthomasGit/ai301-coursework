@@ -55,10 +55,24 @@ happened; these entries are the toolkit's own timeline.
 All four entries are graded. Keep every heading below, and fill each
 one in the week it belongs to.
 
-**Unit 5: [one line on the tool work]**
+**Unit 5: Wrote issue-scout's search strategy and patched it and the rubric across nine live scans (2026-11-22)**
 
-[2-4 sentences: what you built (the scout, your strategy), what broke
-or fell short, what changed because of it.]
+I wrote seven `gh search issues` queries, each traced to a line of my fit
+profile, plus ranking filters and repo tiers, and ran the scout against all of
+GitHub. The first scan accepted two issues in a 2-star Jenkins plugin, one
+already claimed in a comment, and later scans kept spending grading slots on
+known dead ends: issues opened years ago (the queries filtered on last update,
+the rubric on open date), claims written into the issue body, unlinked fix
+PRs, and features far bigger than 2–6 hours. I added `--created` to every
+query, dropped the beginner-label requirement on my starting-point repos
+(those repos had 0 labelled issues from the last 90 days but 43 overall),
+reordered the ranking, kept a list of already-graded rejects, and added rubric
+checks for comment and body claims, repo adoption, AI policy, bounded scope,
+contributor-doable work and a 2–6 hour size, logging each change in
+`scan-notes.md`. Nine scans still produced no accepted issue that fits my
+profile, so the real limit is supply; the one accept that held up,
+orm-lens#335 from scan 3, passed again when I re-graded it directly under the
+final rubric.
 
 **Unit 6: [one line on the tool work]**
 
