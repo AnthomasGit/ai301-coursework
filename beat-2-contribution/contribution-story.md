@@ -73,11 +73,21 @@ profile, so the real limit is supply; the one accept that held up,
 orm-lens#335 from scan 3, passed again when I re-graded it directly under the
 final rubric.
 
-**Unit 6: [one line on the tool work]**
+**Unit 6: Installed the voice guard with upstream rules in my voice guide, and wrote orm-lens's repo memory file (2026-11-22)**
 
-[2-4 sentences: the voice-guard, the repo-memory file. What broke or
-fell short, and what changed because of it. "Nothing broke" counts when
-it is true - say how you know.]
+I folded my three voice-guide copies into one canonical guide, added five
+upstream rules for claims, questions and pings, and hooked the guard into
+Claude Code; it stopped the wiring test and passed my claim before it went up
+on orm-lens#335. Two things fell short: Windows refused the symlinks, so each
+skill's `voice-guide.md` is now a one-line pointer to the canonical file, and
+the hook only watches Bash, so when the wiring test reached for PowerShell
+first the guard never saw it, and I now post only through Bash with
+`--body-file`. Held against my own rules, my old claim draft promised a PR
+"within about a week", so I cut the timeframe and made the report-back
+"before I start on the fix". For orm-lens I wrote a 59-line `CLAUDE.local.md`
+from one scoped read of the parser and its tests, with the pytest, ruff and
+mypy commands checked by running them (1310 passed), kept out of my PR through
+`.git/info/exclude`; the TypeScript tests are not run yet.
 
 **Unit 7: [one line on the tool work]**
 
