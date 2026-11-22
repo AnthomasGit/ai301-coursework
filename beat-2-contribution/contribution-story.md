@@ -162,26 +162,69 @@ Claim comment: https://github.com/FROWNINGdev/orm-lens/issues/335#issuecomment-7
 
 **Problem Description**
 
-[In your own words, what is broken or missing?]
+orm-lens finds Django models by reading `models.py` files with regexes
+instead of importing them. Its class-header regex can't handle a call inside
+the base list, so a model like
+`class Comment(ExportModelOperationsMixin("comment"), models.Model):` is
+skipped without any message. That pattern is common: django-prometheus
+exports per-model metrics through exactly this mixin factory. On Tandoor
+Recipes, the issue reports, 22 of 48 models disappear this way, including
+central ones like `Recipe`, and `drift` then reports their tables as stale.
 
 **Expected Behavior**
 
-[What should happen?]
+A call in the base list is ignored and the other bases decide whether the
+class is a model. On the issue's repro, `orm-lens list -v` reports
+`found 1 apps / 2 models` with `shop.Comment` and `shop.Plain`, and
+`Comment` keeps its `text` field. A class whose only base is a call, like
+`class Plain(SomeFactory("x")):`, is still not a model, and a header wrapped
+over several lines works the same as a one-line one.
 
 **Current Behavior**
 
-[What actually happens?]
+On `main` at `ac40f8d` the repro gives `found 1 apps / 1 models` and only
+`shop.Plain`, with exit code 0 and no warning. The wrapped header drops `Foo`
+the same way. Deleting the call from the base list brings the model back,
+so the call is the trigger (see Reproduction Process).
 
 **Affected Components**
 
-[Which parts of the codebase are involved?]
+- `cli/orm_lens/parser.py`, the Python parser behind the CLI and MCP server:
+  - `CLASS_RE` (line 65) captures the bases with `\(([^)]*)\)`, "everything
+    up to the first `)`". In the repro that `)` closes `("comment"`, so the
+    regex fails to match.
+  - `_read_multiline_class()` (line 115) is the fallback for headers
+    `CLASS_RE` can't read. It balances the parentheses and joins the lines,
+    then retries the same `CLASS_RE` (line 145), so it fails for the same
+    reason. `_collect_defs()` calls it only for classes at column 0
+    (lines 867-868); a class inside a module-level `if` is out of scope here,
+    as the issue says.
+  - After a match, the bases are split on `,` with empty parts dropped
+    (line 882), and `_looks_like_model()` (line 657) decides model-ness from
+    what is left. That is why stripping the call is enough.
+- `src/parser.ts`, the TypeScript parser for the VS Code extension, has the
+  same `[^)]*` in its `CLASS_RE` (lines 102-103), so the extension likely
+  drops these models too. Whether my PR fixes both is the open question in my
+  claim, under the repo's parity rule.
+- Tests: a new `cli/tests/test_call_in_bases.py`, in the unittest style of
+  the existing parser tests, which call `parse_models_file()` on an inline
+  source string.
 
 **Toolkit**
 
-- Tool:
-- What it produced:
-- Difficulties:
-- What changed:
+- Tool: the issue itself, read end to end, plus one scoped read of
+  `cli/orm_lens/parser.py` and `cli/tests/` in my fork, done while writing
+  `CLAUDE.local.md` (the unit-6 repo memory file); its subsystem section is
+  where these components come from
+- What it produced: the call path from `CLASS_RE` through
+  `_read_multiline_class()` to `_collect_defs()` and `_looks_like_model()`,
+  with line numbers checked against `ac40f8d`, the TS twin in `src/parser.ts`,
+  and the test pattern to copy
+- Difficulties: none met in the Python side; the issue already named the
+  cause and the lines, and they all held. I have not read the TS parser past
+  its `CLASS_RE` or run its tests, so the TS impact is still a guess
+- What changed: nothing yet. If the maintainer says to fix both parsers, I
+  will add the TS call path and `npm test` to `CLAUDE.local.md` first
 
 ---
 
