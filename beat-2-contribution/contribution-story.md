@@ -397,17 +397,57 @@ Deviations: none yet.
 
 ## Testing Strategy
 
-[What observable checks prove the fix: your reproduction steps re-run
-against the built change (before and after), and the repo's own test
-suite or checks with the outcome shown. "Tests pass" with nothing
-observable named is not a strategy.]
+Three layers, each with an outcome someone else can check. The fix is not
+built yet, so the "after" results get filled in under Implementation Notes
+as I run them.
+
+1. **My reproduction, before and after.** The same three `shop/models.py`
+   files from Reproduction Process, run with `orm-lens list -v; echo "exit $?"`
+   from each folder:
+   - the issue's repro: before `found 1 apps / 1 models` (only `shop.Plain`);
+     after, expect `found 1 apps / 2 models` with `shop.Comment` and
+     `shop.Plain`
+   - the wrapped header (`class Foo(` over four lines): before only
+     `shop.Plain`; after, expect `shop.Foo` and `shop.Plain`
+   - the controls without the call: `2 models` before and after, so the fix
+     changes nothing for ordinary headers
+   - `orm-lens list -f json` on the repro, to see `Comment` with its `text`
+     field and `baseClasses: ["models.Model"]` (the side effect noted in
+     Solution Approach)
+2. **New regression tests** in `cli/tests/test_call_in_bases.py`, run with
+   `python -m pytest tests/test_call_in_bases.py -v` from `cli/`. Written
+   first and run against unfixed `main`, where the model-found cases must
+   fail; then they must pass with the fix. They cover the issue's three
+   "How to test" cases:
+   - the repro gives both `Comment` and `Plain`, and `Comment` has its `text`
+     field
+   - `class Plain(SomeFactory("x")):`, a call-only base, is still not a model
+   - the wrapped multi-line header is found
+   - plus a nested call, `Mixin(get_label("x"))`, since the suggested loop is
+     meant to handle it from the inside out
+3. **The repo's own checks,** the same commands CI runs, from `cli/`:
+   - `python -m pytest -q`: baseline on `ac40f8d` is 1310 passed, 6 skipped;
+     after, expect the same plus the new tests, with no new failures
+   - `python -m ruff check orm_lens tests ...` and `python -m mypy orm_lens ...`
+     (full paths in `CLAUDE.local.md`): baseline is clean, and must stay clean
+   - if the maintainer asks for the TypeScript fix too: a test in `test/` and
+     `npm test`, which I have not run yet, so I will take a baseline first
+
+The PR description's Test plan carries the before/after output from layer 1
+and the suite's result line from layer 3, not just "tests pass".
 
 **Toolkit**
 
-- Tool:
-- What it produced:
-- Difficulties:
-- What changed:
+- Tool: none of my course tools yet. The checks come from the issue's "How
+  to test" list, the CI workflow (`.github/workflows/ci.yml`), and the
+  baseline runs and commands recorded in `CLAUDE.local.md`
+- What it produced: a three-layer plan with a before result for every check,
+  taken on `ac40f8d` (repro output, 1310 passed, ruff and mypy clean)
+- Difficulties: the TypeScript side has no baseline, because I have not
+  installed Node dependencies or run `npm test`
+- What changed: I added a nested-call test and a JSON check that the issue's
+  list does not include, because the suggested loop and the `baseClasses`
+  side effect both need proof of their own
 
 ---
 
