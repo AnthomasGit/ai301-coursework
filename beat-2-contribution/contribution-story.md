@@ -1,4 +1,4 @@
-# Contribution: [Issue Title]
+# Contribution: Parser: a call in the base list (`ExportModelOperationsMixin("food")`) drops the model
 
 Path: `beat-2-contribution/contribution-story.md`
 
@@ -8,10 +8,9 @@ format criteria grade exactly that. Your course repo link is the whole submissio
 files and no evidence uploads are part of Assignment 5.
 
 **Contribution Number:** [1]
-**Student:** [Student name]
-**GitHub Username:** [your GitHub username, exactly as it appears on your profile - no @, no
-profile URL. Your comments upstream are identified by this name.]
-**Issue:** [GitHub issue link]
+**Student:** Thomas Longobardi
+**GitHub Username:** AnthomasGit
+**Issue:** https://github.com/FROWNINGdev/orm-lens/issues/335
 **Pull Request:** [GitHub PR link, once opened]
 
 One repository, built across units 5 to 8, telling the whole story of your real
@@ -94,24 +93,58 @@ drafted, what you did with the draft.]
 
 ## Why I Chose This Issue
 
-[1-2 paragraphs in your own words: how you searched, what your scan
-surfaced, what your scout's verdict said, why this issue fits your
-profile, and what you hope to learn. If your scout's verdict on it
-was reject and you chose it anyway, say so here and say why; choosing
-against your own tool silently is what loses points. Close with an
-honest read of the tool itself: where the scout fell short on a real
-wild search and what you changed or would change, or what convinced
-you it held up. **Record the link to your claim comment in this section too.**
-Not claimed yet? Write `claim pending` and today's date where the link goes,
-and add the link the moment your claim lands.]
+I ran my scout against all of GitHub with seven, later nine, `gh search issues`
+queries, each tied to a line of my fit profile, and graded the top five of
+each scan against my rubric. Across nine scans that was about 45 graded issues,
+mostly in my starting-point repos (opentelemetry-python and -contrib, the
+Prometheus and Grafana Helm charts, splunk-sdk-python, a jenkinsci plugin) and
+a few small repos. FROWNINGdev/orm-lens#335 surfaced in scan 3 from Q1, my
+broad Python good-first-issue query. It is a parser bug: a call in a class's
+base list, like django-prometheus's `ExportModelOperationsMixin("recipe")`,
+makes orm-lens skip the whole Django model. The scout accepted it in scan 3,
+again when I graded it directly under the full rubric, and a third time in
+this week's re-grade after the scope patch, with the difficulty note
+"straightforward": the issue names the file and the lines, suggests the regex
+and loop, and lists the tests. I re-graded last week's two picks the same day,
+jenkinsci/batch-control-plugin#150 and #152, and both now reject: each has a
+claim comment from someone else, and #150 already has an open PR.
+
+The fit is honest but partial. It is a small Python bug fix with a repro, a
+named cause and a test plan, well inside my 2-6 hours, in a repo with 114 stars
+and active maintainers. The project area is not ops tooling, though: it is
+static analysis for the Django ORM, and the only link to my profile is that the
+trigger is a Prometheus mixin. I chose it anyway because it is the one accepted
+issue that held up after every rubric change, and nothing in my tier-1 repos
+survived grading. From it I want to learn how a real project's review works end
+to end, how to fix a parser bug without breaking its other callers, and whether
+the same fix belongs in the TypeScript parser under the repo's parity rule,
+which is the question I asked in my claim. My read of the scout: the search
+side worked, but the rubric was built on the sandbox's tidy issues. Real issues
+kept failing on claims written into the issue body, unlinked fix PRs and
+unsettled design, and nine scans produced no accepted issue that also fits my
+profile well. The limit I hit is supply in my own area more than the tool.
+
+Claim comment: https://github.com/FROWNINGdev/orm-lens/issues/335#issuecomment-7085240055
 
 **Toolkit**
 
-- Tool: issue-scout (your scout: your search strategy, your rubric),
-  and how you used it
-- What it produced: [the scan and its verdict on this issue, described]
-- Difficulties: [where it fell short, or "none met" if none did]
-- What changed: [what you patched or would update, or "nothing"]
+- Tool: issue-scout, with my search strategy and rubric, run as nine live
+  scans and then a direct re-grade of my three picks
+  (`issue-scout: grade <url> <url> <url>`)
+- What it produced: nine ranked scan read-outs; orm-lens#335 accepted in scan
+  3 and in both direct grades, with the difficulty note "straightforward"; the
+  re-grade rejected batch-control-plugin #150 and #152 on Not Claimed (and
+  Repo Adoption at the time)
+- Difficulties: my Bounded Scope check and Fits 2-6 Hours failed any thread
+  with an unsettled design, which most real issues have; scans 8 and 9
+  accepted none of ten graded issues, on claims, holds and open designs; the
+  25-star floor rejected every new jenkinsci plugin, though Jenkins is on
+  my tool list
+- What changed: applied the unit-6 scope patch (Bounded Scope replaced by
+  `scope-feasible`, plus a difficulty note that never changes the verdict),
+  stopped Fits 2-6 Hours from failing an unfinished design, and let Repo
+  Adoption pass repos owned by the orgs my strategy targets; each change is a
+  dated line in `scan-notes.md`
 
 ---
 
