@@ -189,31 +189,80 @@ Claim comment: https://github.com/FROWNINGdev/orm-lens/issues/335#issuecomment-7
 
 **Environment Setup**
 
-[What a stranger would need to stand this up: your operating system,
-the relevant versions (language, runtime, package manager, the project
-itself), and how you set the project up. Then the challenges you faced
-and how you solved them, or that none came up.]
+- Windows 11 Pro, Git Bash; Python 3.14.7 in a venv (`python -m venv .venv`,
+  activated with `source .venv/Scripts/activate`).
+- orm-lens 1.18.2 from my fork (AnthomasGit/orm-lens), on `main` at `ac40f8d`,
+  the same commit as upstream `main` on 2026-11-22.
+- Setup: `gh repo fork FROWNINGdev/orm-lens --clone`, then
+  `cd cli && pip install -e ".[dev]"`. Before touching anything I ran the
+  repo's own checks: `python -m pytest -q` gave 1310 passed, 6 skipped, and
+  ruff and mypy were clean.
+- Django and django-prometheus are not installed. orm-lens only reads source
+  files, so the repro needs neither.
+- Challenges: none in the project itself. On my side, `gh repo fork` rejected
+  `--clone=true` (it takes a bare `--clone`), and I kept `.venv/` out of git
+  by adding it to `.git/info/exclude` next to `CLAUDE.local.md`.
 
 **Steps to Reproduce**
 
-1. [Step 1]
-2. [Step 2]
-3. [Observed result]
+1. In an empty folder, create `shop/models.py` with the issue's repro: a
+   `Comment(ExportModelOperationsMixin("comment"), models.Model)` class and a
+   `Plain(models.Model)` class, each with one `text = models.TextField()`.
+2. From that folder, run `orm-lens list -v; echo "exit $?"`.
+3. Observed result: `found 1 apps / 1 models`, only `shop.Plain`, exit 0.
+   Expected `found 1 apps / 2 models` with `shop.Comment` too. `Comment` is
+   dropped with no message.
 
 **Reproduction Evidence**
 
-- **Commit showing reproduction:** [link to commit in your fork]
-- **Screenshots/logs:** [if applicable]
-- **My findings:** [what you discovered during reproduction; an
-  honest, evidenced cannot-reproduce that led you to re-pick or ask
-  the maintainer belongs here and costs you nothing]
+- **Commit showing reproduction:** none
+- **Screenshots/logs:**
+
+  ```text
+  $ orm-lens list -v; echo "exit $?"
+  scanned 1 files in 14ms, found 1 apps / 1 models
+  shop.Plain
+  exit 0
+  ```
+
+  Control, the same file with `ExportModelOperationsMixin("comment"), `
+  deleted:
+
+  ```text
+  $ orm-lens list -v
+  scanned 1 files in 11ms, found 1 apps / 2 models
+  shop.Comment
+  shop.Plain
+  ```
+
+- **My findings:** the bug is real on today's `main`. The call in the base
+  list is the trigger: removing it brings `Comment` back. The wrapped header
+  from the issue's "How to test" fails the same way (`class Foo(` /
+  `ExportModelOperationsMixin("foo"),` / `models.Model,` / `):` gives only
+  `shop.Plain`), and deleting the mixin line brings `shop.Foo` back. That
+  matches the issue's cause: `CLASS_RE` in `cli/orm_lens/parser.py` captures
+  the bases with `[^)]*`, and the multi-line fallback retries the same regex.
+  Per the course step, the report stays off the issue; the PR description
+  carries the proof.
 
 **Toolkit**
 
-- Tool:
-- What it produced:
-- Difficulties:
-- What changed:
+- Tool: repro-check, run twice on this issue: on the claim draft alone before
+  posting, then on the claim and the repro report together
+  (`repro-check: grade my claim comment in claim-draft.md and my repro report
+  in repro-draft.md for issue <url>`)
+- What it produced: accept both times. On the pair, all six required checks
+  passed (environment, faithful steps, behavior shown, claims backed,
+  specific claim, AI disclosure); the preferred template check failed because
+  the bug form asks for a VS Code version, which does not apply to a CLI repro
+- Difficulties: it flagged three gaps that did not gate the verdict: "the exit
+  code is 0" had no output behind it, the wrapped-header case had no control
+  and an unclear file, and my last sentence restated the maintainer's own
+  analysis. Its verdict also says the report is "ready to post", which the
+  course step overrides: the report stays off the issue
+- What changed: I re-ran with `echo "exit $?"`, rebuilt the wrapped case with
+  the full file plus a control run, and cut the restated cause. I left the VS
+  Code field out, since the issue itself omits it
 
 ---
 
