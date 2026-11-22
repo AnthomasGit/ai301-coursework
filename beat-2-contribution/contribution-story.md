@@ -313,29 +313,85 @@ so the call is the trigger (see Reproduction Process).
 
 **Analysis**
 
-[Your analysis of the root cause: what is causing the issue, traced
-to the files and functions involved.]
+The root cause is one regex. `CLASS_RE` in `cli/orm_lens/parser.py`
+(line 65) reads the base list as `[^)]*`, so the first `)` ends it. In
+`class Comment(ExportModelOperationsMixin("comment"), models.Model):` that
+`)` closes `("comment"`, the regex then needs a `:` and finds
+`, models.Model):`, and the match fails. The one-line path gives up, and
+`_collect_defs()` (lines 867-868) hands the header to
+`_read_multiline_class()` (line 115). That fallback balances the parentheses
+correctly but then retries the same `CLASS_RE` on the joined buffer
+(line 145), so it fails for the same reason and returns no match. The class is
+skipped and nothing is logged. Everything after a successful match already
+works: the bases are split on `,` with empty parts dropped (line 882), and
+`_looks_like_model()` (line 657) decides from the bases that remain, so
+`models.Model` alone is enough to make `Comment` a model.
 
 **Proposed Solution**
 
-[High-level description of your fix approach, and what you are
-deliberately NOT changing.]
+Follow the maintainer's suggested fix in the issue. In
+`_read_multiline_class()`, once the parentheses balance, split the buffer at
+the first `(` and strip every call from the base list with
+`_CALL_IN_BASES_RE = re.compile(r"[A-Za-z_][\w.]*\s*\([^()]*\)")`, repeated
+until nothing changes so nested calls like `Mixin(get_label("x"))` go from the
+inside out. Then match `CLASS_RE` on the stripped header. A call's result
+can't be resolved statically anyway, and the other bases still decide whether
+this is a model.
+
+What I am deliberately not changing:
+
+- `CLASS_RE` itself and the one-line path. A failed one-line match on a
+  column-0 `class X(` already falls through to `_read_multiline_class()`, so
+  one change there covers both the one-line and the wrapped header.
+- Classes indented inside a module-level `if`. The fallback only runs at
+  column 0, and the issue puts that case out of scope.
+- `Food` and `Keyword` on Tandoor, which are treebeard trees (#330), a
+  separate issue.
+- `src/parser.ts`, until the maintainer answers my claim's question. If the
+  answer is "both", the TS fix goes in the same PR under the parity rule.
+- No version bumps; the release checklist is maintainer only.
+
+One side effect to state in the PR: the stripped call no longer appears in
+the model's `baseClasses` in the JSON output, so `Comment` lists only
+`models.Model`. The issue's fix implies this, and a call has no class name to
+report anyway, but a downstream consumer could notice it.
 
 **Implementation Plan**
 
-1. [Modify file X to do Y]
-2. [Add or change Z]
-3. [Update tests]
+1. On a branch in my fork (`fix/call-in-bases-335`), add `_CALL_IN_BASES_RE`
+   next to `CLASS_RE` in `cli/orm_lens/parser.py`, and strip calls from the
+   base list in `_read_multiline_class()` before the `CLASS_RE` match, with a
+   short comment naming the ``Mixin("label")`` case.
+2. Add `cli/tests/test_call_in_bases.py` (unittest, `parse_models_file()` on
+   inline source) for the three cases in the issue's "How to test": the repro
+   gives `Comment` and `Plain`, and `Comment` has its `text` field;
+   `class Plain(SomeFactory("x")):` is still not a model; the wrapped header
+   works. Run it before the fix to watch it fail.
+3. Add a `### Fixed` entry under `## [Unreleased]` in `CHANGELOG.md`.
+4. Re-run my reproduction (expect `found 1 apps / 2 models`), then
+   `python -m pytest -q`, ruff and mypy from `cli/`.
+5. If the maintainer asks for both parsers: the same change in
+   `src/parser.ts` (`CLASS_RE` at lines 102-103), a test in `test/`, and
+   `npm test`.
+6. Commit as `fix(parser): keep models with a call in the base list`, and
+   open the PR with `Fixes #335` and the PR template filled.
 
-[Record deviations here as they happen: what changed mid-build and
-why. A recorded deviation is honest work; silent drift is not.]
+Deviations: none yet.
 
 **Toolkit**
 
-- Tool:
-- What it produced:
-- Difficulties:
-- What changed:
+- Tool: none of my course tools did this phase. It came from the issue's own
+  suggested fix, my reading of `_read_multiline_class()`,
+  `_collect_defs()` and `_looks_like_model()` in my fork, and the
+  `CLAUDE.local.md` notes from unit 6. I have not run plan-check on this
+  plan yet
+- What it produced: the root-cause trace above with line numbers checked
+  against `ac40f8d`, a list of what stays out of scope, and a six-step plan
+- Difficulties: the TS question is still unanswered on the issue, so step 5
+  is conditional; and reading `_looks_like_model()` turned up the
+  `baseClasses` side effect, which the issue does not mention
+- What changed: I added the `baseClasses` note so the PR states it up front
+  instead of a reviewer finding it
 
 ---
 
